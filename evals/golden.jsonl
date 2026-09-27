@@ -1,0 +1,6 @@
+{"question": "How long do I have to request a refund?", "expected_keywords": ["thirty", "days"]}
+{"question": "Are digital downloads refundable?", "expected_keywords": ["digital", "unused"]}
+{"question": "How fast is standard shipping?", "expected_keywords": ["five", "seven", "business"]}
+{"question": "What does the hardware warranty cover?", "expected_keywords": ["year", "manufacturing", "defects"]}
+{"question": "Does the warranty cover accidental damage?", "expected_keywords": ["not", "accidental"]}
+{"question": "How do I protect my account?", "expected_keywords": ["two", "factor", "authentication"]}

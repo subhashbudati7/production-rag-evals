@@ -18,6 +18,7 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from rag_service.rerank import RerankedChunk
+from rag_service.retrieval import stem, tokenize
 
 _CITATION_RE = re.compile(r"\[(\d+)\]")
 
@@ -113,10 +114,11 @@ _SENTENCE_RE = re.compile(r"[^.!?]+[.!?]")
 class ExtractiveLLM:
     """Zero-API-key baseline ``LLMClient`` for evals and smoke tests.
 
-    Builds the answer by quoting the top evidence chunk's first sentences
-    with their citation numbers. Not a substitute for a real generator —
-    it exists so the eval suite runs deterministically in CI without
-    credentials, and so any real LLM can be compared against it.
+    Picks the evidence sentences with the most (stemmed) token overlap with
+    the question and quotes them with their citation numbers. Not a
+    substitute for a real generator — it exists so the eval suite runs
+    deterministically in CI without credentials, and so any real LLM can
+    be compared against it.
     """
 
     def __init__(self, sentences: int = 2) -> None:
@@ -124,21 +126,37 @@ class ExtractiveLLM:
 
     def complete(self, prompt: str) -> str:
         evidence = _parse_evidence(prompt)
-        parts = []
+        question = _parse_question(prompt)
+        q_tokens = {stem(t) for t in tokenize(question)}
+        scored: list[tuple[float, int, int, str, int]] = []
         for rank, text in evidence:
-            for sentence in _SENTENCE_RE.findall(text)[: self.sentences]:
-                parts.append(f"{sentence.strip()} [{rank}]")
+            for pos, sentence in enumerate(_SENTENCE_RE.findall(text)):
+                clean = sentence.strip()
+                s_tokens = {stem(t) for t in tokenize(clean)}
+                overlap = len(q_tokens & s_tokens)
+                scored.append((overlap, -rank, -pos, clean, rank))
+        scored.sort(key=lambda s: (s[0], s[1], s[2]), reverse=True)
+        parts = [f"{clean} [{rank}]" for _, _, _, clean, rank in scored[: self.sentences]]
         return " ".join(parts) if parts else "The evidence does not answer this question."
 
 
+def _parse_question(prompt: str) -> str:
+    m = re.search(r"^Question: (.*)$", prompt, re.MULTILINE)
+    return m.group(1) if m else ""
+
+
 def _parse_evidence(prompt: str) -> list[tuple[int, str]]:
-    """Recover the numbered evidence chunks from a ``build_prompt`` prompt."""
+    """Recover the numbered evidence chunks from a ``build_prompt`` prompt.
+
+    Chunk texts may contain blank lines, so headers are located with a
+    regex and each chunk runs until the next header (or the Answer marker).
+    """
     marker = "Evidence:\n"
     body = prompt.split(marker, 1)[1] if marker in prompt else ""
     tail = body.split("\n\nAnswer:", 1)[0]
+    headers = list(re.finditer(r"\[(\d+)\] \(id: [^)]*\)\n", tail))
     chunks: list[tuple[int, str]] = []
-    for block in tail.split("\n\n"):
-        m = re.match(r"\[(\d+)\] \(id: [^)]*\)\n(.*)", block, re.DOTALL)
-        if m:
-            chunks.append((int(m.group(1)), m.group(2)))
+    for i, match in enumerate(headers):
+        end = headers[i + 1].start() if i + 1 < len(headers) else len(tail)
+        chunks.append((int(match.group(1)), tail[match.end() : end].strip()))
     return chunks

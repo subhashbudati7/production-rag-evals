@@ -25,6 +25,17 @@ def tokenize(text: str) -> list[str]:
     return _TOKEN_RE.findall(text.lower())
 
 
+def stem(tok: str) -> str:
+    """Naive plural stemmer so 'refunds' matches 'refund' in metrics."""
+    if len(tok) > 4 and tok.endswith("ies"):
+        return tok[:-3] + "y"
+    if len(tok) > 3 and tok.endswith("es"):
+        return tok[:-2]
+    if len(tok) > 3 and tok.endswith("s"):
+        return tok[:-1]
+    return tok
+
+
 class BM25Index:
     """Okapi BM25 over a fixed corpus of chunk texts."""
 

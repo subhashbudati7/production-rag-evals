@@ -59,11 +59,18 @@ the golden question set (`evals/golden.jsonl`).
 
 | metric | target | latest |
 |---|---|---|
-| faithfulness (supported claims / total claims) | ≥ 0.90 | _first eval run lands with the eval-suite commit_ |
-| answer relevance | ≥ 0.85 | _tbd_ |
+| faithfulness (grounding proxy) | ≥ 0.90 | _tbd — first model-backed run lands before deploy_ |
+| answer relevance (keyword coverage) | ≥ 0.85 | _tbd_ |
 | retrieval p50 latency | ≤ 300 ms | _tbd_ |
 | end-to-end p95 latency | ≤ 1500 ms | _tbd_ |
 | cost per 1k tokens (blended) | ≤ $0.004 | _tbd_ |
+
+Run the suite (needs the `embeddings` extra; uses the extractive baseline
+generator unless you point `--llm-module` at a real client):
+
+```bash
+python scripts/run_eval.py --docs evals/docs --eval evals/golden.jsonl
+```
 
 ## Cost model
 
@@ -75,9 +82,10 @@ as a tradeoff, not a silent regression.
 ## Layout
 
 ```
-rag_service/      the service (config, ingest, retrieval, rerank, api, eval)
-tests/            pytest suite — one module per service module
-evals/            golden dataset + eval runner outputs
+rag_service/      the service (config, ingest, retrieval, rerank, generate, api, eval)
+tests/            pytest suite — one module per service module + end-to-end pipeline test
+evals/            golden dataset, sample docs corpus, eval runner outputs
+scripts/          run_eval.py — golden eval set through the full pipeline
 Dockerfile        production image (uvicorn)
 ```
 

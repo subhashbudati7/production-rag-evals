@@ -24,7 +24,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from rag_service.config import Settings
-from rag_service.retrieval import tokenize
+from rag_service.retrieval import stem, tokenize
 
 _CHARS_PER_TOKEN = 4.0
 
@@ -120,26 +120,15 @@ class EvalReport:
         return header + body + summary
 
 
-def _stem(tok: str) -> str:
-    """Naive plural stemmer so 'refunds' matches 'refund' in grounding."""
-    if len(tok) > 4 and tok.endswith("ies"):
-        return tok[:-3] + "y"
-    if len(tok) > 3 and tok.endswith("es"):
-        return tok[:-2]
-    if len(tok) > 3 and tok.endswith("s"):
-        return tok[:-1]
-    return tok
-
-
 def grounding(answer: str, evidence_texts: list[str]) -> float:
     """Faithfulness proxy: content-token overlap between answer and evidence."""
     evidence_tokens = set()
     for text in evidence_texts:
         evidence_tokens.update(
-            _stem(t) for t in tokenize(text) if t not in _STOPWORDS
+            stem(t) for t in tokenize(text) if t not in _STOPWORDS
         )
     answer_tokens = [
-        _stem(t)
+        stem(t)
         for t in tokenize(re.sub(r"\[\d+\]", " ", answer))
         if t not in _STOPWORDS
     ]
@@ -154,8 +143,8 @@ def keyword_coverage(answer: str, expected: list[str]) -> float:
     """Answer-relevance proxy: fraction of expected keywords in the answer."""
     if not expected:
         return 1.0
-    tokens = {_stem(t) for t in tokenize(answer)}
-    return sum(1 for k in expected if _stem(k.lower()) in tokens) / len(expected)
+    tokens = {stem(t) for t in tokenize(answer)}
+    return sum(1 for k in expected if stem(k.lower()) in tokens) / len(expected)
 
 
 def estimate_cost_usd(input_chars: int, output_chars: int, settings: Settings) -> float:
