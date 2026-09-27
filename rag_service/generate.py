@@ -105,3 +105,40 @@ def generate_answer(
         citation_check=check,
         evidence=evidence,
     )
+
+
+_SENTENCE_RE = re.compile(r"[^.!?]+[.!?]")
+
+
+class ExtractiveLLM:
+    """Zero-API-key baseline ``LLMClient`` for evals and smoke tests.
+
+    Builds the answer by quoting the top evidence chunk's first sentences
+    with their citation numbers. Not a substitute for a real generator —
+    it exists so the eval suite runs deterministically in CI without
+    credentials, and so any real LLM can be compared against it.
+    """
+
+    def __init__(self, sentences: int = 2) -> None:
+        self.sentences = sentences
+
+    def complete(self, prompt: str) -> str:
+        evidence = _parse_evidence(prompt)
+        parts = []
+        for rank, text in evidence:
+            for sentence in _SENTENCE_RE.findall(text)[: self.sentences]:
+                parts.append(f"{sentence.strip()} [{rank}]")
+        return " ".join(parts) if parts else "The evidence does not answer this question."
+
+
+def _parse_evidence(prompt: str) -> list[tuple[int, str]]:
+    """Recover the numbered evidence chunks from a ``build_prompt`` prompt."""
+    marker = "Evidence:\n"
+    body = prompt.split(marker, 1)[1] if marker in prompt else ""
+    tail = body.split("\n\nAnswer:", 1)[0]
+    chunks: list[tuple[int, str]] = []
+    for block in tail.split("\n\n"):
+        m = re.match(r"\[(\d+)\] \(id: [^)]*\)\n(.*)", block, re.DOTALL)
+        if m:
+            chunks.append((int(m.group(1)), m.group(2)))
+    return chunks

@@ -3,6 +3,7 @@
 import pytest
 
 from rag_service.generate import (
+    ExtractiveLLM,
     build_prompt,
     generate_answer,
     verify_citations,
@@ -78,3 +79,19 @@ def test_generate_answer_requires_minimum_evidence():
 def test_generate_answer_rejects_empty_llm_output():
     with pytest.raises(ValueError, match="empty answer"):
         generate_answer("q", _evidence(), EchoLLM("   "))
+
+
+def test_extractive_llm_quotes_top_evidence_with_citations():
+    answer = ExtractiveLLM().complete(build_prompt("What is the refund policy?", _evidence()))
+    assert "[1]" in answer
+    assert "thirty days" in answer.lower()
+
+
+def test_extractive_llm_generates_verifiable_answer():
+    evidence = _evidence()
+    answer = ExtractiveLLM().complete(build_prompt("q", evidence))
+    check = verify_citations(answer, evidence)
+    assert check.valid
+    result = generate_answer("q", evidence, ExtractiveLLM())
+    assert result.citation_check.valid
+    assert result.citations_used == ["doc:0", "doc:1"]
