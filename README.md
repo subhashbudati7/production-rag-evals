@@ -57,16 +57,17 @@ Served as a FastAPI app (`rag_service/api.py`), packaged with Docker.
 Tracked per release; the numbers below are from the latest eval run against
 the golden question set (`evals/golden.jsonl`).
 
-| metric | target | latest |
+| metric | target | latest (2026-10-03, n=6, extractive baseline) |
 |---|---|---|
-| faithfulness (grounding proxy) | ≥ 0.90 | _tbd — first model-backed run lands before deploy_ |
-| answer relevance (keyword coverage) | ≥ 0.85 | _tbd_ |
-| retrieval p50 latency | ≤ 300 ms | _tbd_ |
-| end-to-end p95 latency | ≤ 1500 ms | _tbd_ |
-| cost per 1k tokens (blended) | ≤ $0.004 | _tbd_ |
+| faithfulness (grounding proxy) | ≥ 0.90 | 1.000 — baseline quotes evidence verbatim; discriminating once a generative LLM is used |
+| answer relevance (keyword coverage) | ≥ 0.85 | 0.833 (5/6; one miss from stopword-counting sentence scorer — fix planned) |
+| retrieval p50 latency | ≤ 300 ms | not yet measured separately from end-to-end |
+| end-to-end p95 latency | ≤ 1500 ms | 498024.7 ms incl. one-time model download; steady-state 0.7–4.2 s on CPU (over budget — GPU/smaller reranker is the lever) |
+| cost per 1k tokens (blended) | ≤ $0.004 | $0.00020 (modeled embed cost; no LLM configured) |
 
-Run the suite (needs the `embeddings` extra; uses the extractive baseline
-generator unless you point `--llm-module` at a real client):
+Full run notes: `evals/baseline_report.md`. Rerun the suite (needs the
+`embeddings` extra; uses the extractive baseline generator unless you
+point `--llm-module` at a real client or set `RAG_LLM_API_KEY`):
 
 ```bash
 python scripts/run_eval.py --docs evals/docs --eval evals/golden.jsonl
