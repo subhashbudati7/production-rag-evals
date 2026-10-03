@@ -24,13 +24,9 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from rag_service.config import Settings
-from rag_service.retrieval import stem, tokenize
+from rag_service.retrieval import STOPWORDS, stem, tokenize
 
 _CHARS_PER_TOKEN = 4.0
-
-_STOPWORDS = frozenset(
-    ["the", "a", "an", "and", "or", "of", "to", "in", "is", "are", "was", "were", "be", "been", "on", "for", "with", "as", "by", "at", "from", "it", "its", "this", "that", "these", "those", "i", "you", "he", "she", "we", "they", "them", "his", "her", "our", "their", "not", "no", "yes", "if", "then", "than", "so", "such", "can", "could", "will", "would", "should", "may", "might", "do", "does", "did", "have", "has", "had", "what", "which", "who", "whom", "when", "where", "why", "how", "does"]
-)
 
 
 @dataclass(frozen=True)
@@ -125,12 +121,12 @@ def grounding(answer: str, evidence_texts: list[str]) -> float:
     evidence_tokens = set()
     for text in evidence_texts:
         evidence_tokens.update(
-            stem(t) for t in tokenize(text) if t not in _STOPWORDS
+            stem(t) for t in tokenize(text) if t not in STOPWORDS
         )
     answer_tokens = [
         stem(t)
         for t in tokenize(re.sub(r"\[\d+\]", " ", answer))
-        if t not in _STOPWORDS
+        if t not in STOPWORDS
     ]
     if not answer_tokens:
         return 0.0

@@ -19,6 +19,13 @@ import numpy as np
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 
+#: Common English stopwords, excluded from content-overlap scoring so that
+#: sharing "the"/"to"/"a" never outranks sharing a content word. Shared by
+#: the eval grounding metric and the extractive baseline's sentence scorer.
+STOPWORDS = frozenset(
+    ["the", "a", "an", "and", "or", "of", "to", "in", "is", "are", "was", "were", "be", "been", "on", "for", "with", "as", "by", "at", "from", "it", "its", "this", "that", "these", "those", "i", "you", "he", "she", "we", "they", "them", "his", "her", "our", "their", "not", "no", "yes", "if", "then", "than", "so", "such", "can", "could", "will", "would", "should", "may", "might", "do", "does", "did", "have", "has", "had", "what", "which", "who", "whom", "when", "where", "why", "how", "does"]
+)
+
 
 def tokenize(text: str) -> list[str]:
     """Lowercase alphanumeric tokens."""
