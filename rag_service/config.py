@@ -43,6 +43,11 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     reranker_model: str = "BAAI/bge-reranker-base"
     generator_model: str = "gpt-4o-mini"
+    # OpenAI-compatible chat endpoint for generation; empty api key means
+    # the extractive baseline (or an injected fake) is used instead.
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_api_key: str | None = None
+    llm_timeout_s: float = Field(default=60.0, gt=0)
 
     # -- latency budgets (milliseconds) ---------------------------------------
     retrieval_p50_budget_ms: int = Field(default=300, gt=0)
