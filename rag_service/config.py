@@ -62,6 +62,16 @@ class Settings(BaseSettings):
     docs_dir: str = "docs"
     vector_store_path: str = "var/vector_store"
 
+    # -- startup -----------------------------------------------------------------
+    auto_build_index_on_startup: bool = Field(
+        default=True,
+        description="Lifespan builds any uninjected pipeline stage from settings.",
+    )
+    warmup_models_on_startup: bool = Field(
+        default=False,
+        description="Eagerly load model weights at startup (slow first boot, fast first query).",
+    )
+
     @field_validator("rerank_top_k")
     @classmethod
     def rerank_within_retrieval(cls, v: int, info) -> int:

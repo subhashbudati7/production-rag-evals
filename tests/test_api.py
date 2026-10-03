@@ -143,3 +143,72 @@ def test_index_docs_dir_requires_embedder(tmp_path):
         assert "no embedder configured" in str(exc)
     else:
         raise AssertionError("expected RuntimeError")
+
+
+def _stack_fakes(settings):
+    return (
+        build_retriever(_docs(), settings, KeywordEmbedder()),
+        Reranker(ReverseScorer()),
+        StubLLM(),
+    )
+
+
+def test_lifespan_builds_uninjected_stages():
+    settings = Settings(top_k=10, rerank_top_k=2)
+    seen = []
+
+    def builder(s):
+        seen.append(s)
+        return _stack_fakes(s)
+
+    app = create_app(settings, stack_builder=builder)
+    with TestClient(app) as client:
+        assert seen == [settings]
+        health = client.get("/health").json()
+        assert health["index_built"] is True
+        assert health["reranker_loaded"] is True
+        assert health["llm_configured"] is True
+        resp = client.post("/query", json={"query": "refund"})
+        assert resp.status_code == 200
+        assert resp.json()["generated"] is True
+
+
+def test_lifespan_keeps_injected_stages():
+    settings = Settings(top_k=10, rerank_top_k=2)
+    injected = build_retriever(_docs(), settings, KeywordEmbedder())
+    llm = StubLLM()
+
+    def builder(s):
+        return _stack_fakes(s)  # different retriever/reranker instances
+
+    app = create_app(settings, retriever=injected, llm=llm, stack_builder=builder)
+    with TestClient(app) as client:
+        health = client.get("/health").json()
+        assert health["index_built"] is True
+        resp = client.post("/query", json={"query": "refund"})
+        assert resp.status_code == 200
+        assert llm.prompts, "expected the injected LLM to serve the query"
+
+
+def test_lifespan_skipped_when_disabled():
+    def builder(s):
+        raise AssertionError("builder must not run when auto-build is disabled")
+
+    settings = Settings(auto_build_index_on_startup=False)
+    app = create_app(settings, stack_builder=builder)
+    with TestClient(app) as client:
+        health = client.get("/health").json()
+        assert health["index_built"] is False
+        assert client.post("/query", json={"query": "x"}).status_code == 503
+
+
+def test_lifespan_degrades_gracefully_on_builder_failure():
+    def builder(s):
+        raise RuntimeError("disk on fire")
+
+    app = create_app(Settings(), stack_builder=builder)
+    with TestClient(app) as client:
+        health = client.get("/health").json()
+        assert health["status"] == "ok"
+        assert health["index_built"] is False
+        assert client.post("/query", json={"query": "x"}).status_code == 503
