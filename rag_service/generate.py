@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 from rag_service.rerank import RerankedChunk
-from rag_service.retrieval import stem, tokenize
+from rag_service.retrieval import STOPWORDS, stem, tokenize
 
 _CITATION_RE = re.compile(r"\[(\d+)\]")
 
@@ -115,8 +115,10 @@ class ExtractiveLLM:
     """Zero-API-key baseline ``LLMClient`` for evals and smoke tests.
 
     Picks the evidence sentences with the most (stemmed) token overlap with
-    the question and quotes them with their citation numbers. Not a
-    substitute for a real generator — it exists so the eval suite runs
+    the question and quotes them with their citation numbers. Scoring is
+    stopword-aware (sharing "to"/"a"/"the" never outranks sharing a content
+    word), using the stopwords shared with retrieval and the eval metrics.
+    Not a substitute for a real generator — it exists so the eval suite runs
     deterministically in CI without credentials, and so any real LLM can
     be compared against it.
     """
@@ -127,12 +129,12 @@ class ExtractiveLLM:
     def complete(self, prompt: str) -> str:
         evidence = _parse_evidence(prompt)
         question = _parse_question(prompt)
-        q_tokens = {stem(t) for t in tokenize(question)}
+        q_tokens = {stem(t) for t in tokenize(question) if t not in STOPWORDS}
         scored: list[tuple[float, int, int, str, int]] = []
         for rank, text in evidence:
             for pos, sentence in enumerate(_SENTENCE_RE.findall(text)):
                 clean = sentence.strip()
-                s_tokens = {stem(t) for t in tokenize(clean)}
+                s_tokens = {stem(t) for t in tokenize(clean) if t not in STOPWORDS}
                 overlap = len(q_tokens & s_tokens)
                 scored.append((overlap, -rank, -pos, clean, rank))
         scored.sort(key=lambda s: (s[0], s[1], s[2]), reverse=True)

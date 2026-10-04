@@ -95,3 +95,16 @@ def test_extractive_llm_generates_verifiable_answer():
     result = generate_answer("q", evidence, ExtractiveLLM())
     assert result.citation_check.valid
     assert result.citations_used == ["doc:0", "doc:1"]
+
+
+def test_extractive_llm_scores_content_words_over_stopwords():
+    # Regression: stopword counting once let a sentence sharing only
+    # "to"/"a"/"have" outrank the sentence with the actual answer.
+    evidence = [
+        RerankedChunk("doc:0", "You have to be there to do it.", 9.1, 1),
+        RerankedChunk("doc:1", "Refund requests are honored within thirty days.", 8.4, 2),
+    ]
+    answer = ExtractiveLLM(sentences=1).complete(
+        build_prompt("How long do I have to request a refund?", evidence)
+    )
+    assert "thirty days" in answer.lower()
