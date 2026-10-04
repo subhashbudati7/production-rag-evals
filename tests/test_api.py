@@ -128,6 +128,25 @@ def test_query_top_k_is_respected():
     assert len(resp.json()["citations"]) == 1
 
 
+def test_query_reports_per_stage_timings():
+    resp = _full_client().post("/query", json={"query": "refund policy"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["latency_ms"] >= 0
+    for stage in ("retrieval_ms", "rerank_ms", "generation_ms"):
+        assert body[stage] >= 0
+    stages_sum = body["retrieval_ms"] + body["rerank_ms"] + body["generation_ms"]
+    assert stages_sum <= body["latency_ms"]
+
+
+def test_query_timings_without_reranker_and_llm():
+    resp = _client().post("/query", json={"query": "refund"})
+    body = resp.json()
+    assert body["retrieval_ms"] > 0
+    assert body["rerank_ms"] >= 0
+    assert body["generation_ms"] >= 0  # stage skipped, but never negative/absent
+
+
 def test_index_docs_dir_reads_files(tmp_path):
     (tmp_path / "a.md").write_text("# Refunds\nrefund policy text here")
     retriever = index_docs_dir(str(tmp_path), Settings(), KeywordEmbedder())

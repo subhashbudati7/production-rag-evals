@@ -1,7 +1,9 @@
 """HTTP service: health checks and the query endpoint.
 
 The /query endpoint runs the full RAG pipeline: hybrid retrieval ->
-cross-encoder rerank -> citation-grounded generation. Every stage is
+cross-encoder rerank -> citation-grounded generation, and reports
+per-stage timings (retrieval_ms, rerank_ms, generation_ms) so latency
+regressions are attributable, not just observable. Every stage is
 optional behind injection: omit the reranker and candidates pass through
 in hybrid order; omit the LLM and the endpoint returns the evidence
 (citations) without pretending to generate. ``answer`` stays null and
@@ -64,6 +66,9 @@ class QueryResponse(BaseModel):
     answer: str | None = None
     citations: list[Citation]
     latency_ms: float
+    retrieval_ms: float = 0.0
+    rerank_ms: float = 0.0
+    generation_ms: float = 0.0
     generated: bool = False
     citations_valid: bool = True
 
@@ -211,22 +216,28 @@ def create_app(
             raise HTTPException(status_code=503, detail="index not built")
         pull_k = req.top_k or settings.top_k
         keep_k = min(settings.rerank_top_k, pull_k)
+        t0 = time.perf_counter()
         hits = active.search(req.query, pull_k)
+        retrieval_ms = (time.perf_counter() - t0) * 1000
+        t0 = time.perf_counter()
         evidence = (
             app.state.reranker.rerank(req.query, hits, keep_k)
             if app.state.reranker is not None
             else _pass_through(hits, keep_k)
         )
+        rerank_ms = (time.perf_counter() - t0) * 1000
         answer: str | None = None
         generated = False
         valid = True
         used: list[str] | None = None
+        t0 = time.perf_counter()
         if app.state.llm is not None and evidence:
             result: GeneratedAnswer = generate_answer(req.query, evidence, app.state.llm)
             answer = result.answer
             generated = True
             valid = result.citation_check.valid
             used = result.citations_used
+        generation_ms = (time.perf_counter() - t0) * 1000
         by_id = {c.chunk_id: c for c in evidence}
         chosen = [by_id[cid] for cid in used if cid in by_id] if used else evidence
         latency_ms = (time.perf_counter() - started) * 1000
@@ -237,6 +248,9 @@ def create_app(
                 Citation(chunk_id=c.chunk_id, text=c.text, score=c.rerank_score) for c in chosen
             ],
             latency_ms=latency_ms,
+            retrieval_ms=retrieval_ms,
+            rerank_ms=rerank_ms,
+            generation_ms=generation_ms,
             generated=generated,
             citations_valid=valid,
         )
