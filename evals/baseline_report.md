@@ -48,3 +48,18 @@ latency p50 2749.4ms / p95 498024.7ms, cost $0.00020/1k tokens.
 - **cost is modeled, not billed:** $0.00020/1k tokens at the configured
   embedding rate — two orders of magnitude under the $0.004 budget.
   Real generator pricing applies once an LLM is configured.
+
+## Addendum — 2026-10-10
+
+- **Keyword coverage is now 6/6.** The stopword-aware sentence scorer
+  (committed 2026-10-04, pinned by regression test
+  `test_extractive_llm_scores_content_words_over_stopwords`) fixed the
+  refund-question miss, so answer relevance on the golden set is 1.000.
+- **Per-stage latency is now measured.** `/query` reports
+  `retrieval_ms` / `rerank_ms` / `generation_ms`, and
+  `scripts/measure_latency.py` runs the golden set through the real
+  endpoint with a deterministic offline stack: retrieval p50 0.1ms /
+  p95 9.6ms, rerank p50 0.1ms, generation p50 0.2ms, end-to-end p50
+  0.3ms / p95 10.1ms. These are pipeline-overhead numbers (no model
+  inference); they hold the service accountable for its own code while
+  the real-stack CPU latencies above hold it accountable for its models.
