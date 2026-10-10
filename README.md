@@ -80,6 +80,38 @@ Cost is a first-class output of the eval suite, not an afterthought.
 configured per-1k-token rates, so a "better" model that doubles cost shows up
 as a tradeoff, not a silent regression.
 
+## Configuration
+
+Every knob is an environment variable prefixed `RAG_` (or a `.env` file) —
+no code changes needed to retune retrieval, swap models, or tighten
+budgets. The authoritative list lives in `rag_service/config.py`.
+
+| variable | default | what it does |
+|---|---|---|
+| `RAG_ENVIRONMENT` | `development` | `development` / `staging` / `production`; surfaced on `/health` |
+| `RAG_CHUNK_SIZE` | `800` | target chunk size in characters |
+| `RAG_CHUNK_OVERLAP` | `120` | overlap between consecutive chunks |
+| `RAG_MIN_CHUNK_CHARS` | `50` | drop trailing chunks shorter than this |
+| `RAG_TOP_K` | `20` | candidates pulled from hybrid retrieval |
+| `RAG_RERANK_TOP_K` | `5` | candidates kept after reranking (≤ `RAG_TOP_K`) |
+| `RAG_BM25_K1` | `1.2` | BM25 term-frequency saturation |
+| `RAG_BM25_B` | `0.75` | BM25 length normalization |
+| `RAG_HYBRID_ALPHA` | `0.6` | weight of the vector score in fusion; BM25 gets `1 - alpha` |
+| `RAG_EMBEDDING_MODEL` | `BAAI/bge-small-en-v1.5` | dense embedding model |
+| `RAG_RERANKER_MODEL` | `BAAI/bge-reranker-base` | cross-encoder reranker model |
+| `RAG_GENERATOR_MODEL` | `gpt-4o-mini` | OpenAI-compatible chat model |
+| `RAG_LLM_BASE_URL` | `https://api.openai.com/v1` | OpenAI-compatible chat endpoint |
+| `RAG_LLM_API_KEY` | *(unset)* | when unset, the endpoint serves evidence citations without generated answers |
+| `RAG_LLM_TIMEOUT_S` | `60` | generation request timeout |
+| `RAG_RETRIEVAL_P50_BUDGET_MS` | `300` | budget the eval suite checks retrieval p50 against |
+| `RAG_END_TO_END_P95_BUDGET_MS` | `1500` | budget the eval suite checks end-to-end p95 against |
+| `RAG_COST_PER_1K_INPUT_TOKENS` | `0.00015` | USD per 1k input tokens for the cost model |
+| `RAG_COST_PER_1K_OUTPUT_TOKENS` | `0.0006` | USD per 1k output tokens for the cost model |
+| `RAG_COST_PER_1K_EMBED_TOKENS` | `0.00002` | USD per 1k embed tokens for the cost model |
+| `RAG_DOCS_DIR` | `docs` | documents indexed at startup (mount here in Docker) |
+| `RAG_AUTO_BUILD_INDEX_ON_STARTUP` | `true` | lifespan builds any uninjected pipeline stage |
+| `RAG_WARMUP_MODELS_ON_STARTUP` | `false` | eagerly load weights at startup (slow boot, fast first query) |
+
 ## Layout
 
 ```
