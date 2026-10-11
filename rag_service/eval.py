@@ -95,6 +95,45 @@ class EvalReport:
     def cost_usd_per_1k_tokens(self) -> float:
         return statistics.fmean(self._col("cost_usd_per_1k_tokens")) if self.rows else 0.0
 
+    def budget_violations(
+        self,
+        settings: Settings,
+        *,
+        min_grounding: float = 0.90,
+        min_keyword_coverage: float = 0.85,
+        max_cost_usd_per_1k_tokens: float = 0.004,
+    ) -> list[str]:
+        """Budget gate: human-readable failures, empty when the run passes.
+
+        Quality floors default to the targets in the README eval table;
+        latency and cost budgets come from ``Settings`` so the gate and
+        the service agree on the numbers. An empty report always fails —
+        a gate that passes on no data is worse than no gate.
+        """
+        if not self.rows:
+            return ["no eval cases ran"]
+        violations: list[str] = []
+        if self.grounding < min_grounding:
+            violations.append(
+                f"grounding {self.grounding:.3f} < {min_grounding:.3f} target"
+            )
+        if self.keyword_coverage < min_keyword_coverage:
+            violations.append(
+                f"keyword coverage {self.keyword_coverage:.3f} "
+                f"< {min_keyword_coverage:.3f} target"
+            )
+        p95 = self.latency_p95()
+        if p95 > settings.end_to_end_p95_budget_ms:
+            violations.append(
+                f"latency p95 {p95:.1f}ms > {settings.end_to_end_p95_budget_ms}ms budget"
+            )
+        if self.cost_usd_per_1k_tokens > max_cost_usd_per_1k_tokens:
+            violations.append(
+                f"cost ${self.cost_usd_per_1k_tokens:.5f}/1k tokens "
+                f"> ${max_cost_usd_per_1k_tokens:.5f} budget"
+            )
+        return violations
+
     def markdown_table(self) -> str:
         """Render the eval table as markdown for the README."""
         header = (

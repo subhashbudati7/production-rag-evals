@@ -56,6 +56,11 @@ def main() -> int:
     parser.add_argument("--skip-rerank", action="store_true")
     parser.add_argument("--llm-module", default=None)
     parser.add_argument("--extractive-sentences", type=int, default=2)
+    parser.add_argument(
+        "--fail-on-budget",
+        action="store_true",
+        help="exit 1 when the report violates a quality/latency/cost budget (CI gate)",
+    )
     args = parser.parse_args()
 
     settings = Settings()
@@ -92,6 +97,12 @@ def main() -> int:
 
     report = run_eval(cases, pipeline, settings, time_fn=time.perf_counter)
     print(report.markdown_table())
+    if args.fail_on_budget:
+        violations = report.budget_violations(settings)
+        if violations:
+            for violation in violations:
+                print(f"budget violation: {violation}", file=sys.stderr)
+            return 1
     return 0
 
 

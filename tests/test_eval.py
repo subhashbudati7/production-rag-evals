@@ -81,6 +81,32 @@ def test_run_eval_empty_cases_gives_zero_aggregates():
     assert report.latency_p50() == 0.0
 
 
+def test_budget_violations_empty_when_within_budgets():
+    rows = [EvalRow("q", 1.0, 1.0, 100.0, 0.0002)]
+    report = EvalReport(rows=rows)
+    assert report.budget_violations(Settings()) == []
+
+
+def test_budget_violations_flags_each_breach():
+    rows = [EvalRow("q", 0.5, 0.4, 99999.0, 0.5)]
+    violations = EvalReport(rows=rows).budget_violations(Settings())
+    assert len(violations) == 4
+    joined = " ".join(violations)
+    for needle in ("grounding", "keyword coverage", "latency p95", "cost"):
+        assert needle in joined
+
+
+def test_budget_violations_empty_report_always_fails():
+    assert EvalReport(rows=[]).budget_violations(Settings()) == ["no eval cases ran"]
+
+
+def test_budget_violations_respect_custom_floors():
+    rows = [EvalRow("q", 0.8, 0.8, 100.0, 0.0002)]
+    report = EvalReport(rows=rows)
+    assert report.budget_violations(Settings())  # default floors 0.90/0.85 fail it
+    assert report.budget_violations(Settings(), min_grounding=0.7, min_keyword_coverage=0.7) == []
+
+
 def test_eval_report_p95_uses_ceiling_index():
     rows = [EvalRow(f"q{i}", 1.0, 1.0, float(i), 0.0) for i in range(20)]
     report = EvalReport(rows=rows)
