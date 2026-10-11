@@ -48,7 +48,7 @@ def test_collect_runs_golden_set_through_query(probe):
 
     settings = Settings(top_k=10, rerank_top_k=3, auto_build_index_on_startup=False)
     questions = probe.load_questions(str(EVALS_DIR / "golden.jsonl"))
-    assert len(questions) == 6
+    assert len(questions) == 10
     docs = load_documents(str(EVALS_DIR / "docs"))
     vocab = probe._build_vocab(str(EVALS_DIR / "golden.jsonl"))
     latencies = probe._collect(questions, docs, settings, vocab)

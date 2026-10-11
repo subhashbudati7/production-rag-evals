@@ -84,7 +84,7 @@ def test_full_pipeline_eval_report_is_sane():
         return result.answer, [c.text for c in evidence], len(prompt), len(result.answer)
 
     report = run_eval(cases, pipeline, settings)
-    assert report.n == 6
+    assert report.n == 10
     assert report.grounding > 0.6
     assert report.keyword_coverage > 0.5
     assert report.latency_p95() >= 0

@@ -4,3 +4,7 @@
 {"question": "What does the hardware warranty cover?", "expected_keywords": ["year", "manufacturing", "defects"]}
 {"question": "Does the warranty cover accidental damage?", "expected_keywords": ["not", "accidental"]}
 {"question": "How do I protect my account?", "expected_keywords": ["two", "factor", "authentication"]}
+{"question": "How do I track my order?", "expected_keywords": ["track", "order", "tracking"]}
+{"question": "Do gift cards expire?", "expected_keywords": ["never", "expire"]}
+{"question": "When is customer support available?", "expected_keywords": ["monday", "friday"]}
+{"question": "Do you ship internationally?", "expected_keywords": ["internationally", "canada"]}

@@ -63,3 +63,16 @@ latency p50 2749.4ms / p95 498024.7ms, cost $0.00020/1k tokens.
   0.3ms / p95 10.1ms. These are pipeline-overhead numbers (no model
   inference); they hold the service accountable for its own code while
   the real-stack CPU latencies above hold it accountable for its models.
+
+## Addendum — 2026-10-11
+
+- **Golden set expanded 6 → 10 cases.** The corpus gained four
+  help-center sections (order tracking, gift cards, support hours,
+  international shipping) with one golden question each, so retrieval
+  and generation are now exercised beyond refunds/shipping/warranty.
+  The table above remains the n=6 model-backed run; a fresh n=10 run
+  with real models is part of the Oct 27 deploy checklist.
+- **The eval suite is now a gate, not just a report.**
+  `EvalReport.budget_violations` checks grounding, keyword coverage,
+  p95 latency, and cost against the documented budgets, and
+  `scripts/run_eval.py --fail-on-budget` exits 1 on any violation.
