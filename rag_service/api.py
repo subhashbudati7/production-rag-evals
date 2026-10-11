@@ -26,10 +26,11 @@ from __future__ import annotations
 
 import logging
 import time
+import uuid
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -195,6 +196,22 @@ def create_app(
     """
     settings = settings or Settings()
     app = FastAPI(title=settings.app_name, version=settings.version, lifespan=lifespan)
+
+    @app.middleware("http")
+    async def request_id_middleware(request: Request, call_next):
+        """Tag every request with an X-Request-ID for log correlation.
+
+        An incoming X-Request-ID (from a proxy or client tracing) is
+        propagated unchanged; otherwise a fresh UUID4 is minted. The id
+        is echoed on the response — including error responses — so a
+        client report can be matched to server logs.
+        """
+        request_id = request.headers.get("x-request-id") or uuid.uuid4().hex
+        request.state.request_id = request_id
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
+
     app.state.settings = settings
     app.state.retriever = retriever
     app.state.reranker = reranker

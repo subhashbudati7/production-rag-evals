@@ -125,6 +125,32 @@ def test_health_stays_ok_when_not_ready():
     assert client.get("/ready").status_code == 503
 
 
+def test_request_id_header_is_minted_when_absent():
+    resp = _client().get("/health")
+    request_id = resp.headers.get("x-request-id")
+    assert request_id
+    assert len(request_id) == 32  # uuid4 hex
+
+
+def test_request_id_header_propagates_incoming_value():
+    resp = _client().get("/health", headers={"X-Request-ID": "trace-abc-123"})
+    assert resp.headers["x-request-id"] == "trace-abc-123"
+
+
+def test_request_id_present_on_error_responses():
+    client = TestClient(create_app(Settings()))
+    resp = client.post("/query", json={"query": "refund"})
+    assert resp.status_code == 503
+    assert resp.headers.get("x-request-id")
+
+
+def test_request_ids_differ_between_requests():
+    client = _client()
+    first = client.get("/health").headers["x-request-id"]
+    second = client.get("/health").headers["x-request-id"]
+    assert first != second
+
+
 def test_query_returns_citations_without_generation():
     resp = _client().post("/query", json={"query": "refund policy"})
     assert resp.status_code == 200
