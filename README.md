@@ -130,6 +130,17 @@ pytest
 uvicorn rag_service.api:app --host 0.0.0.0 --port 8000
 ```
 
+Probes: `GET /health` is liveness (always 200 while the process serves);
+`GET /ready` is readiness — 200 only once the index is built, 503 before
+that. Every response carries an `X-Request-ID` header (propagated from
+the client when sent, minted otherwise) for log correlation.
+
+CI (`.github/workflows/ci.yml`) runs ruff + the deterministic test suite
++ the offline latency probe on every push. The model-backed eval doubles
+as a release gate: `python scripts/run_eval.py --fail-on-budget` exits 1
+when grounding, keyword coverage, p95 latency, or cost breach the budgets
+in the eval table above.
+
 ## Status
 
 October 2026 build — working branch `rag/october-build`, merged to `main`

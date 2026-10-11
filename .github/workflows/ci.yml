@@ -1,0 +1,30 @@
+name: ci
+
+# The deterministic test suite is the CI gate: it exercises the full
+# pipeline (retrieval -> rerank -> generation -> eval) with offline fakes,
+# so it needs no model downloads and no API keys. The model-backed eval
+# (scripts/run_eval.py --fail-on-budget) runs at release time instead —
+# its CPU latencies and one-time weight downloads do not belong in CI.
+
+on:
+  push:
+    branches: [main, "rag/**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install (service + dev tools, no embeddings extra)
+        run: pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check rag_service tests scripts
+      - name: Test
+        run: pytest -q
+      - name: Latency probe smoke check (offline stack)
+        run: python scripts/measure_latency.py --json
