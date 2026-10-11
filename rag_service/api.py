@@ -14,7 +14,10 @@ any stage that was not injected (docs -> index, cross-encoder reranker,
 OpenAI-compatible LLM when RAG_LLM_API_KEY is set). A stage that fails to
 build logs a warning and stays ``None`` so the service starts degraded
 rather than refusing to boot; /query then returns 503 until an index is
-present, and /health reports which stages are live. Model weights stay
+present, and /health reports which stages are live. ``/health`` is the
+liveness probe (always 200 while the process serves); ``/ready`` is the
+readiness probe — 200 only once an index is built, 503 before that, so
+orchestrators keep traffic away from a still-warming instance. Model weights stay
 lazy — the first real query pays the download — unless
 RAG_WARMUP_MODELS_ON_STARTUP is set.
 """
@@ -27,6 +30,7 @@ from collections.abc import Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from rag_service.config import Settings
@@ -207,6 +211,23 @@ def create_app(
             "reranker_loaded": app.state.reranker is not None,
             "llm_configured": app.state.llm is not None,
         }
+
+    @app.get("/ready")
+    def ready() -> JSONResponse:
+        """Readiness probe: 200 only when /query can actually be served.
+
+        Liveness (/health) answers "is the process up?"; readiness answers
+        "should traffic be routed here yet?" — no, until the index exists.
+        Reranker and LLM stay optional stages, so only the index gates.
+        """
+        index_built = app.state.retriever is not None
+        body = {
+            "status": "ready" if index_built else "not_ready",
+            "index_built": index_built,
+            "reranker_loaded": app.state.reranker is not None,
+            "llm_configured": app.state.llm is not None,
+        }
+        return JSONResponse(content=body, status_code=200 if index_built else 503)
 
     @app.post("/query", response_model=QueryResponse)
     def query(req: QueryRequest) -> QueryResponse:

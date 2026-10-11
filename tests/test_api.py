@@ -100,6 +100,31 @@ def test_health():
     assert body["version"] == "0.1.0"
 
 
+def test_ready_is_503_until_index_built():
+    resp = TestClient(create_app(Settings())).get("/ready")
+    assert resp.status_code == 503
+    body = resp.json()
+    assert body["status"] == "not_ready"
+    assert body["index_built"] is False
+
+
+def test_ready_is_200_once_index_built():
+    resp = _client().get("/ready")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["status"] == "ready"
+    assert body["index_built"] is True
+    # Optional stages do not gate readiness: no reranker/LLM injected here.
+    assert body["reranker_loaded"] is False
+    assert body["llm_configured"] is False
+
+
+def test_health_stays_ok_when_not_ready():
+    client = TestClient(create_app(Settings()))
+    assert client.get("/health").status_code == 200
+    assert client.get("/ready").status_code == 503
+
+
 def test_query_returns_citations_without_generation():
     resp = _client().post("/query", json={"query": "refund policy"})
     assert resp.status_code == 200
