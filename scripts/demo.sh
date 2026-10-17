@@ -53,7 +53,7 @@ while true; do
   sleep 5
 done
 
-QUESTION=$(python3 -c "import json; print(json.load(open('evals/golden.jsonl'))['question'])")
+QUESTION=$(python3 -c "import json; print(json.loads(open('evals/golden.jsonl').readline())['question'])")
 echo "==> asking: $QUESTION"
 curl -s "http://localhost:$PORT/query" \
   -H "Content-Type: application/json" \
