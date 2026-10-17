@@ -76,3 +76,11 @@ latency p50 2749.4ms / p95 498024.7ms, cost $0.00020/1k tokens.
   `EvalReport.budget_violations` checks grounding, keyword coverage,
   p95 latency, and cost against the documented budgets, and
   `scripts/run_eval.py --fail-on-budget` exits 1 on any violation.
+
+## Addendum — 2026-10-17
+
+- **Offline probe refreshed for n=10.** `scripts/measure_latency.py` over
+  the expanded golden set (deterministic offline stack, no model
+  inference): retrieval p50 0.1ms / p95 0.3ms, rerank p50 0.1ms,
+  generation p50 0.2ms / p95 0.5ms, end-to-end p50 0.4ms / p95 0.9ms.
+  The README eval table now reports these instead of the n=6 numbers.

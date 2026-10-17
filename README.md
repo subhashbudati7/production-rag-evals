@@ -61,8 +61,8 @@ the golden question set (`evals/golden.jsonl`).
 |---|---|---|
 | faithfulness (grounding proxy) | ≥ 0.90 | 1.000 — baseline quotes evidence verbatim; discriminating once a generative LLM is used |
 | answer relevance (keyword coverage) | ≥ 0.85 | 1.000 (6/6) — the one miss was fixed by stopword-aware sentence scoring (regression test `test_extractive_llm_scores_content_words_over_stopwords`) |
-| retrieval p50 latency | ≤ 300 ms | 0.1 ms pipeline overhead with the offline deterministic stack (`scripts/measure_latency.py`, n=6); production model inference not included |
-| end-to-end p95 latency | ≤ 1500 ms | pipeline overhead 10.1 ms (offline stack). Real stack: 498024.7 ms incl. one-time model download; steady-state 0.7–4.2 s on CPU (over budget — GPU/smaller reranker is the lever) |
+| retrieval p50 latency | ≤ 300 ms | 0.1 ms pipeline overhead with the offline deterministic stack (`scripts/measure_latency.py`, n=10); production model inference not included |
+| end-to-end p95 latency | ≤ 1500 ms | pipeline overhead p50 0.4 ms / p95 0.9 ms (offline stack, n=10). Real stack: 498024.7 ms incl. one-time model download; steady-state 0.7–4.2 s on CPU (over budget — GPU/smaller reranker is the lever) |
 | cost per 1k tokens (blended) | ≤ $0.004 | $0.00020 (modeled embed cost; no LLM configured) |
 
 Full run notes: `evals/baseline_report.md`. Rerun the suite (needs the
