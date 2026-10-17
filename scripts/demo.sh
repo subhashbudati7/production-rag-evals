@@ -8,7 +8,8 @@
 # Needs Docker and a network connection (model weights download into the
 # container on first boot). Pass RAG_LLM_API_KEY=... for a generated
 # answer; without it the endpoint returns evidence citations without
-# pretending to generate.
+# pretending to generate. Pass DEMO_QUESTION_INDEX=N to ask the Nth
+# golden question (default 0).
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -53,7 +54,16 @@ while true; do
   sleep 5
 done
 
-QUESTION=$(python3 -c "import json; print(json.loads(open('evals/golden.jsonl').readline())['question'])")
+QUESTION_INDEX="${DEMO_QUESTION_INDEX:-0}"
+QUESTION=$(python3 - "$QUESTION_INDEX" <<'EOF'
+import json, sys
+lines = [line for line in open("evals/golden.jsonl") if line.strip()]
+idx = int(sys.argv[1])
+if not 0 <= idx < len(lines):
+    sys.exit(f"DEMO_QUESTION_INDEX {idx} out of range (0..{len(lines) - 1})")
+print(json.loads(lines[idx])["question"])
+EOF
+)
 echo "==> asking: $QUESTION"
 curl -s "http://localhost:$PORT/query" \
   -H "Content-Type: application/json" \
