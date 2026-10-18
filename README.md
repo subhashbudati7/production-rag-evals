@@ -57,13 +57,13 @@ Served as a FastAPI app (`rag_service/api.py`), packaged with Docker.
 Tracked per release; the numbers below are from the latest eval run against
 the golden question set (`evals/golden.jsonl`).
 
-| metric | target | latest (2026-10-03, n=6, extractive baseline) |
+| metric | target | latest (2026-10-17, n=10, extractive baseline, CPU) |
 |---|---|---|
 | faithfulness (grounding proxy) | ≥ 0.90 | 1.000 — baseline quotes evidence verbatim; discriminating once a generative LLM is used |
-| answer relevance (keyword coverage) | ≥ 0.85 | 1.000 (6/6) — the one miss was fixed by stopword-aware sentence scoring (regression test `test_extractive_llm_scores_content_words_over_stopwords`) |
+| answer relevance (keyword coverage) | ≥ 0.85 | 1.000 (10/10) |
 | retrieval p50 latency | ≤ 300 ms | 0.1 ms pipeline overhead with the offline deterministic stack (`scripts/measure_latency.py`, n=10); production model inference not included |
-| end-to-end p95 latency | ≤ 1500 ms | pipeline overhead p50 0.4 ms / p95 0.9 ms (offline stack, n=10). Real stack: 498024.7 ms incl. one-time model download; steady-state 0.7–4.2 s on CPU (over budget — GPU/smaller reranker is the lever) |
-| cost per 1k tokens (blended) | ≤ $0.004 | $0.00020 (modeled embed cost; no LLM configured) |
+| end-to-end p95 latency | ≤ 1500 ms | Real stack n=10: p50 1318.8 ms / p95 6445.7 ms (p95 is first-query model warmup; steady-state 0.7–1.8 s on CPU — over budget; GPU/smaller reranker is the lever) |
+| cost per 1k tokens (blended) | ≤ $0.004 | $0.00019 (modeled embed cost; no LLM configured) |
 
 Full run notes: `evals/baseline_report.md`. Rerun the suite (needs the
 `embeddings` extra; uses the extractive baseline generator unless you
@@ -71,6 +71,14 @@ point `--llm-module` at a real client or set `RAG_LLM_API_KEY`):
 
 ```bash
 python scripts/run_eval.py --docs evals/docs --eval evals/golden.jsonl
+```
+
+On this VM the weights must come from the local cache (the HF CDN is
+blocked at the egress proxy), so export these first:
+
+```bash
+export HF_HUB_CACHE=/home/hatch/.hf-cache/hub
+export NO_PROXY="localhost,127.0.0.1,::1,198.19.0.1,198.19.0.2" no_proxy="$NO_PROXY"
 ```
 
 ## Cost model

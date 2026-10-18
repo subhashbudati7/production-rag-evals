@@ -84,3 +84,29 @@ latency p50 2749.4ms / p95 498024.7ms, cost $0.00020/1k tokens.
   inference): retrieval p50 0.1ms / p95 0.3ms, rerank p50 0.1ms,
   generation p50 0.2ms / p95 0.5ms, end-to-end p50 0.4ms / p95 0.9ms.
   The README eval table now reports these instead of the n=6 numbers.
+
+## Addendum — 2026-10-17 (n=10 model-backed rerun)
+
+Fresh full-pipeline run over all 10 golden cases with real models on CPU
+(extractive baseline generator, no API keys). Command:
+
+```bash
+export HF_HUB_CACHE=/home/hatch/.hf-cache/hub HF_HUB_OFFLINE=1
+export NO_PROXY="localhost,127.0.0.1,::1,198.19.0.1,198.19.0.2" no_proxy="$NO_PROXY"
+python scripts/run_eval.py --docs evals/docs --eval evals/golden.jsonl
+```
+
+- Embeddings: `BAAI/bge-small-en-v1.5`; reranker: `BAAI/bge-reranker-base`.
+- **No downloads were needed.** Both weight sets were already cached at
+  `/home/hatch/.hf-cache/hub` — this VM's HF CDN endpoint
+  (`cdn-lfs.huggingface.co`) is blocked at the egress proxy, and the
+  stock `no_proxy` value additionally crashes huggingface_hub's httpx
+  (`InvalidURL: Invalid port: ':1]'`), so future runs must export the
+  sanitized `NO_PROXY` above and point `HF_HUB_CACHE` at the existing
+  cache; `HF_HUB_OFFLINE=1` proves nothing is fetched.
+- Results: grounding **1.000**, keyword coverage **1.000** (10/10),
+  latency p50 **1318.8ms** / p95 **6445.7ms**, cost **$0.00019**/1k tokens.
+- The p95 is the first question (6445.7ms — model warmup); steady-state
+  per-question latency is 691–1820ms. p95 remains over the 1500ms budget
+  on CPU — same known condition as the Oct 3 run; GPU or a smaller
+  reranker is the lever. `--fail-on-budget` would exit 1 on p95 alone.
