@@ -132,7 +132,11 @@ rag_service/      the service (config, ingest, retrieval, rerank, generate, api,
 tests/            pytest suite — one module per service module + end-to-end pipeline test
 evals/            golden dataset, sample docs corpus, eval runner outputs
 scripts/          run_eval.py — golden eval set through the full pipeline
+                  measure_latency.py — offline pipeline-latency probe
+                  demo.sh — one-command Docker demo (build → serve → golden question)
 Dockerfile        production image (uvicorn)
+CHANGELOG.md      release notes (v0.1.0 targets 2026-10-27)
+DEPLOY.md         Oct 27 release runbook: pre-merge checks, demo verification, merge, hosting
 ```
 
 ## Quickstart
