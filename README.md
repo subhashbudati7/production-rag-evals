@@ -81,6 +81,11 @@ export HF_HUB_CACHE=/home/hatch/.hf-cache/hub
 export NO_PROXY="localhost,127.0.0.1,::1,198.19.0.1,198.19.0.2" no_proxy="$NO_PROXY"
 ```
 
+The first query pays one-time model warmup (it dominated the p95 above), so
+for steady-state latency numbers pass `--warmup-question` with any golden
+question — it runs untimed before the measured loop and is excluded from
+the report.
+
 ## Cost model
 
 Cost is a first-class output of the eval suite, not an afterthought.
