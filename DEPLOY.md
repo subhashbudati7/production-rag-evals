@@ -5,7 +5,8 @@ counts on the contribution graph) + a live demo URL.
 
 ## 1. Pre-merge verification
 
-- `ruff check rag_service tests scripts` clean, `pytest -q` all green.
+- `python scripts/check_release.py` — one command: ruff + pytest + the
+  offline latency probe, non-zero exit if any step fails.
 - `python scripts/measure_latency.py` runs; README eval table matches its output.
 - Every local commit on `rag/october-build` is mirrored to GitHub —
   `git ls-remote` head must equal the local head. No unmirrored commits.
