@@ -41,11 +41,16 @@ Verify the CI workflow is green on `main`, then tag the release
 
 ## 4. Live demo URL — DECISION NEEDED
 
-Hosting is not chosen yet. Candidates:
+Hosting is not chosen yet. Candidates (prices verified October 2026):
 
-- **Hugging Face Spaces** (Docker SDK): free, purpose-built for model demos,
-  repo can live under his HF account.
-- **Render / Fly.io**: container hosting with free tiers; needs his account.
+- **Hugging Face Spaces** (Docker SDK): purpose-built for model demos,
+  repo can live under his HF account. The free CPU tier is dead for new
+  accounts — creating a new Docker Space needs PRO ($9/mo) or added
+  credits. Still the recommendation, but only after he sees the real price.
+- **Google Cloud Run** (warm always-on): ~$25–30/mo; no account decision
+  beyond his existing Google account.
+- **Render / Fly.io**: container hosting; verify current free-tier
+  availability before choosing — do not assume a free tier exists.
 - **Vercel**: not a fit — it doesn't run Docker containers.
 
 Pick one, deploy the production image, and put the URL at the top of the
