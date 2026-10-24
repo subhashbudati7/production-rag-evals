@@ -133,6 +133,7 @@ tests/            pytest suite — one module per service module + end-to-end pi
 evals/            golden dataset, sample docs corpus, eval runner outputs
 scripts/          run_eval.py — golden eval set through the full pipeline
                   measure_latency.py — offline pipeline-latency probe
+                  check_release.py — one-command pre-merge check (ruff + pytest + probe)
                   demo.sh — one-command Docker demo (build → serve → golden question)
 Dockerfile        production image (uvicorn)
 CHANGELOG.md      release notes (v0.1.0 targets 2026-10-27)
