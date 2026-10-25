@@ -1,0 +1,80 @@
+{
+  "n": 10,
+  "grounding": 1.0,
+  "keyword_coverage": 1.0,
+  "latency_p50_ms": 708.3900995000931,
+  "latency_p95_ms": 1443.031044999998,
+  "cost_usd_per_1k_tokens": 0.0001900883824134982,
+  "rows": [
+    {
+      "question": "How long do I have to request a refund?",
+      "grounding": 1.0,
+      "keyword_coverage": 1.0,
+      "latency_ms": 663.769923000018,
+      "cost_usd_per_1k_tokens": 0.00019822695035460994
+    },
+    {
+      "question": "Are digital downloads refundable?",
+      "grounding": 1.0,
+      "keyword_coverage": 1.0,
+      "latency_ms": 638.3187579999685,
+      "cost_usd_per_1k_tokens": 0.00018327855382087096
+    },
+    {
+      "question": "How fast is standard shipping?",
+      "grounding": 1.0,
+      "keyword_coverage": 1.0,
+      "latency_ms": 1443.031044999998,
+      "cost_usd_per_1k_tokens": 0.0001711077844311377
+    },
+    {
+      "question": "What does the hardware warranty cover?",
+      "grounding": 1.0,
+      "keyword_coverage": 1.0,
+      "latency_ms": 708.1117870000071,
+      "cost_usd_per_1k_tokens": 0.00020047058823529412
+    },
+    {
+      "question": "Does the warranty cover accidental damage?",
+      "grounding": 1.0,
+      "keyword_coverage": 1.0,
+      "latency_ms": 708.6684120001792,
+      "cost_usd_per_1k_tokens": 0.00020031274433150896
+    },
+    {
+      "question": "How do I protect my account?",
+      "grounding": 1.0,
+      "keyword_coverage": 1.0,
+      "latency_ms": 636.5282809999826,
+      "cost_usd_per_1k_tokens": 0.00020492957746478876
+    },
+    {
+      "question": "How do I track my order?",
+      "grounding": 1.0,
+      "keyword_coverage": 1.0,
+      "latency_ms": 1100.401088000126,
+      "cost_usd_per_1k_tokens": 0.00018164062499999997
+    },
+    {
+      "question": "Do gift cards expire?",
+      "grounding": 1.0,
+      "keyword_coverage": 1.0,
+      "latency_ms": 598.3826760000284,
+      "cost_usd_per_1k_tokens": 0.00019454314720812182
+    },
+    {
+      "question": "When is customer support available?",
+      "grounding": 1.0,
+      "keyword_coverage": 1.0,
+      "latency_ms": 1176.782224000135,
+      "cost_usd_per_1k_tokens": 0.0001818777292576419
+    },
+    {
+      "question": "Do you ship internationally?",
+      "grounding": 1.0,
+      "keyword_coverage": 1.0,
+      "latency_ms": 722.9411719999916,
+      "cost_usd_per_1k_tokens": 0.00018449612403100774
+    }
+  ]
+}

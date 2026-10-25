@@ -12,13 +12,13 @@ cross-encoder reranking, and an evidence-numbered generation step with
 dangling-citation verification. Ships with Docker and a GitHub Actions CI
 pipeline (ruff + pytest + offline latency probe).
 
-### Eval numbers (golden set, n=10, dated 2026-10-17)
+### Eval numbers (golden set, n=10, dated 2026-10-25, warmup excluded)
 
 | metric | target | result |
 |---|---|---|
 | faithfulness (grounding proxy) | ≥ 0.90 | 1.000 |
 | answer relevance (keyword coverage) | ≥ 0.85 | 1.000 (10/10) |
-| end-to-end p95 latency | ≤ 1500 ms | 6445.7 ms on CPU — first-query model warmup; steady-state 691–1820 ms |
+| end-to-end p95 latency | ≤ 1500 ms | 1443.0 ms on CPU (p50 708.4 ms) — steady-state with `--warmup-question`; first-query warmup excluded |
 | cost per 1k tokens (blended) | ≤ $0.004 | $0.00019 (modeled embed cost; no LLM configured) |
 
 Full run notes: `evals/baseline_report.md`.
@@ -38,7 +38,9 @@ Full run notes: `evals/baseline_report.md`.
 
 ### Known limitations
 
-- p95 latency misses the 1500 ms budget on CPU (bge-reranker-base on the
-  critical path). The lever for v0.2.0: GPU inference or a smaller reranker.
+- p95 latency is within budget on CPU only with warmup excluded
+  (1443.0 ms vs the 1500 ms budget — thin headroom; a slower machine
+  could breach it). The lever for v0.2.0: GPU inference or a smaller
+  reranker.
 - Generation defaults to the extractive baseline; a generative LLM is
   configured via `RAG_LLM_API_KEY`.

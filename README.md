@@ -57,12 +57,12 @@ Served as a FastAPI app (`rag_service/api.py`), packaged with Docker.
 Tracked per release; the numbers below are from the latest eval run against
 the golden question set (`evals/golden.jsonl`).
 
-| metric | target | latest (2026-10-17, n=10, extractive baseline, CPU) |
+| metric | target | latest (2026-10-25, n=10, extractive baseline, CPU) |
 |---|---|---|
 | faithfulness (grounding proxy) | ≥ 0.90 | 1.000 — baseline quotes evidence verbatim; discriminating once a generative LLM is used |
 | answer relevance (keyword coverage) | ≥ 0.85 | 1.000 (10/10) |
 | retrieval p50 latency | ≤ 300 ms | 0.1 ms pipeline overhead with the offline deterministic stack (`scripts/measure_latency.py`, n=10); production model inference not included |
-| end-to-end p95 latency | ≤ 1500 ms | Real stack n=10: p50 1318.8 ms / p95 6445.7 ms (p95 is first-query model warmup; steady-state 0.7–1.8 s on CPU — over budget; GPU/smaller reranker is the lever) |
+| end-to-end p95 latency | ≤ 1500 ms | Real stack n=10 with `--warmup-question`: p50 708.4 ms / p95 1443.0 ms — steady-state, within budget on CPU (2026-10-17 run without warmup: p95 6445.7 ms, dominated by first-query model warmup) |
 | cost per 1k tokens (blended) | ≤ $0.004 | $0.00019 (modeled embed cost; no LLM configured) |
 
 Full run notes: `evals/baseline_report.md`. Rerun the suite (needs the
@@ -81,10 +81,11 @@ export HF_HUB_CACHE=/home/hatch/.hf-cache/hub
 export NO_PROXY="localhost,127.0.0.1,::1,198.19.0.1,198.19.0.2" no_proxy="$NO_PROXY"
 ```
 
-The first query pays one-time model warmup (it dominated the p95 above), so
-for steady-state latency numbers pass `--warmup-question` with any golden
-question — it runs untimed before the measured loop and is excluded from
-the report.
+The first query pays one-time model warmup (it dominated the p95 in the
+2026-10-17 run), so for steady-state latency numbers pass
+`--warmup-question` with any golden question — it runs untimed before the
+measured loop and is excluded from the report. Pass `--output <path>` to
+also save the report as JSON for the deploy record.
 
 ## Cost model
 
@@ -132,6 +133,7 @@ rag_service/      the service (config, ingest, retrieval, rerank, generate, api,
 tests/            pytest suite — one module per service module + end-to-end pipeline test
 evals/            golden dataset, sample docs corpus, eval runner outputs
 scripts/          run_eval.py — golden eval set through the full pipeline
+                  (--warmup-question, --fail-on-budget, --output JSON report)
                   measure_latency.py — offline pipeline-latency probe
                   check_release.py — one-command pre-merge check (ruff + pytest + probe)
                   demo.sh — one-command Docker demo (build → serve → golden question)

@@ -110,3 +110,30 @@ python scripts/run_eval.py --docs evals/docs --eval evals/golden.jsonl
   per-question latency is 691–1820ms. p95 remains over the 1500ms budget
   on CPU — same known condition as the Oct 3 run; GPU or a smaller
   reranker is the lever. `--fail-on-budget` would exit 1 on p95 alone.
+
+## Addendum — 2026-10-25 (n=10 model-backed rerun, warmup excluded)
+
+First steady-state run using the `--warmup-question` flag added 2026-10-18,
+plus the new `--output` JSON record (`evals/steady_state_2026-10-25.json`).
+Command (same cache/no-proxy exports as the 2026-10-17 run):
+
+```bash
+python scripts/run_eval.py --docs evals/docs --eval evals/golden.jsonl \
+  --warmup-question "How long do I have to request a refund?" \
+  --output evals/steady_state_2026-10-25.json
+```
+
+- Embeddings: `BAAI/bge-small-en-v1.5`; reranker: `BAAI/bge-reranker-base`;
+  extractive baseline generator, no API keys.
+- Results: grounding **1.000**, keyword coverage **1.000** (10/10),
+  latency p50 **708.4ms** / p95 **1443.0ms**, cost **$0.00019**/1k tokens.
+- The warmup flag delivers: with first-query warmup excluded, p95 falls
+  from 6445.7ms (2026-10-17, no warmup) to 1443.0ms — now within the
+  1500ms budget on CPU. With n=10 the p95 is the slowest case
+  ("How fast is standard shipping?", 1443.0ms); per-case latencies
+  598–1443ms, so the budget headroom is thin and a slower machine
+  could breach it.
+- Honesty note: a first attempt at this run executed while a pytest
+  run shared the CPU and reported p95 4215.8ms — that run was discarded
+  as contaminated, and the numbers above are from a clean rerun with
+  no other load on the machine. DEPLOY.md now warns about this.
