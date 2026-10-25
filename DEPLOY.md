@@ -9,10 +9,18 @@ counts on the contribution graph) + a live demo URL.
   offline latency probe, non-zero exit if any step fails.
 - `python scripts/measure_latency.py` runs; README eval table matches its output.
 - Every local commit on `rag/october-build` is mirrored to GitHub —
-  `git ls-remote` head must equal the local head. No unmirrored commits.
+  run the mirror helper and confirm it reports "nothing to mirror".
+  (The helper replays commits through the git database API, so remote
+  SHAs differ from local SHAs by design; the helper's own state, not
+  `git ls-remote` equality, is the mirror check.)
 - Model-backed eval is fresh: `python scripts/run_eval.py
-  --docs evals/docs --eval evals/golden.jsonl` over all 10 golden cases;
-  README eval table date/numbers and `evals/baseline_report.md` updated.
+  --docs evals/docs --eval evals/golden.jsonl
+  --warmup-question "<first golden question>"
+  --output evals/steady_state_<date>.json` over all 10 golden cases,
+  run with no other CPU load on the machine (a concurrent test run
+  inflated per-case latencies 2–4x on 2026-10-25); README eval table
+  date/numbers and `evals/baseline_report.md` updated, and the JSON
+  report committed as the run's record.
 
 ## 2. Demo verification (needs a Docker host)
 
