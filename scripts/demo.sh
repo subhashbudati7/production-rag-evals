@@ -20,6 +20,11 @@ TIMEOUT_S="${DEMO_TIMEOUT_S:-900}"
 
 cd "$REPO_ROOT"
 
+if ! command -v docker >/dev/null 2>&1; then
+  echo "docker is not installed; demo.sh needs a Docker host (see DEPLOY.md)" >&2
+  exit 1
+fi
+
 echo "==> building image $IMAGE"
 docker build -t "$IMAGE" .
 
