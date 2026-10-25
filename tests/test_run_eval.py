@@ -61,6 +61,36 @@ def test_warmup_runs_first_and_is_excluded_from_report():
     }
 
 
+def test_report_to_dict_is_json_serializable_and_matches_aggregates():
+    import json
+
+    module = _load_module()
+    report = _run(module, _cases())
+    payload = json.loads(json.dumps(report.to_dict()))
+    assert payload["n"] == 2
+    assert payload["grounding"] == report.grounding
+    assert payload["keyword_coverage"] == report.keyword_coverage
+    assert payload["latency_p50_ms"] == report.latency_p50()
+    assert payload["latency_p95_ms"] == report.latency_p95()
+    assert payload["cost_usd_per_1k_tokens"] == report.cost_usd_per_1k_tokens
+    assert [row["question"] for row in payload["rows"]] == [
+        "How long do I have to request a refund?",
+        "Do you ship internationally?",
+    ]
+
+
+def test_write_report_json_creates_parent_dirs_and_valid_json(tmp_path):
+    import json
+
+    module = _load_module()
+    report = _run(module, _cases())
+    target = tmp_path / "nested" / "report.json"
+    module.write_report_json(report, str(target))
+    payload = json.loads(target.read_text())
+    assert payload["n"] == 2
+    assert len(payload["rows"]) == 2
+
+
 def test_no_warmup_by_default_runs_cases_only():
     module = _load_module()
     report = _run(module, _cases())

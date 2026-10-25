@@ -91,10 +91,23 @@ def run_eval_cases(
     return run_eval(cases, pipeline, settings, time_fn=time_fn)
 
 
+def write_report_json(report: EvalReport, path: str) -> None:
+    """Write the report's JSON form to ``path`` (parents created as needed)."""
+    target = Path(path)
+    if target.parent != Path("."):
+        target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(report.to_dict(), indent=2) + "\n")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the golden RAG eval set.")
     parser.add_argument("--docs", default="evals/docs")
     parser.add_argument("--eval", default="evals/golden.jsonl")
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="also write the report as JSON to this path (for CI/deploy records)",
+    )
     parser.add_argument("--skip-rerank", action="store_true")
     parser.add_argument("--llm-module", default=None)
     parser.add_argument("--extractive-sentences", type=int, default=2)
@@ -142,6 +155,9 @@ def main() -> int:
         time_fn=time.perf_counter,
     )
     print(report.markdown_table())
+    if args.output:
+        write_report_json(report, args.output)
+        print(f"wrote JSON report to {args.output}")
     if args.fail_on_budget:
         violations = report.budget_violations(settings)
         if violations:

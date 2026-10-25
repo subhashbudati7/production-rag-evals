@@ -134,6 +134,31 @@ class EvalReport:
             )
         return violations
 
+    def to_dict(self) -> dict:
+        """JSON-serializable form: aggregates plus one row per case.
+
+        Lets CI and the deploy run keep a machine-readable eval record
+        alongside the human-readable markdown table.
+        """
+        return {
+            "n": self.n,
+            "grounding": self.grounding,
+            "keyword_coverage": self.keyword_coverage,
+            "latency_p50_ms": self.latency_p50(),
+            "latency_p95_ms": self.latency_p95(),
+            "cost_usd_per_1k_tokens": self.cost_usd_per_1k_tokens,
+            "rows": [
+                {
+                    "question": r.question,
+                    "grounding": r.grounding,
+                    "keyword_coverage": r.keyword_coverage,
+                    "latency_ms": r.latency_ms,
+                    "cost_usd_per_1k_tokens": r.cost_usd_per_1k_tokens,
+                }
+                for r in self.rows
+            ],
+        }
+
     def markdown_table(self) -> str:
         """Render the eval table as markdown for the README."""
         header = (
